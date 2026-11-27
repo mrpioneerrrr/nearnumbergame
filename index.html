@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>NEAR · 가까운 합</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#000; --s1:#111113; --s2:#1c1c1e; --hair:rgba(255,255,255,.09); --hair2:rgba(255,255,255,.16);
+  --ink:#f5f5f7; --mute:#86868b; --dim:#48484a;
+  --a:#ff453a; --b:#0a84ff;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Apple SD Gothic Neo","Pretendard","Helvetica Neue","Malgun Gothic",sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;letter-spacing:-.01em}
+body{display:flex;justify-content:center;
+  background:radial-gradient(120% 70% at 50% 0%, #0d0d10 0%, #000 60%)}
+#app{width:100%;max-width:480px;min-height:100vh;padding:max(20px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom));display:flex;flex-direction:column}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer;color:inherit}
+input{font-family:inherit;-webkit-user-select:text;user-select:text}
+.p0{--pc:var(--a)} .p1{--pc:var(--b)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pc);margin-right:8px;vertical-align:1px}
+
+.btn{display:block;width:100%;padding:17px;border-radius:14px;border:none;font-size:17px;font-weight:600;
+  background:var(--ink);color:#000;transition:transform .15s var(--ease),opacity .3s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.15}
+.btn.sec{background:var(--s2);color:var(--ink)}
+.cap{font-size:12px;font-weight:500;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.fill{flex:1}
+.fade{animation:fade .5s var(--ease) both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.later{animation:fade .6s var(--ease) var(--d,0ms) both}
+
+/* ---------- setup ---------- */
+.brand{margin:56px 0 4px;font-size:56px;font-weight:700;letter-spacing:-.045em}
+.tag{color:var(--mute);font-size:17px;margin-bottom:44px}
+.field{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 28px}
+.field input{width:100%;padding:15px 14px;border-radius:12px;border:none;background:var(--s2);color:var(--ink);font-size:16px;outline:none}
+.field label{display:block}
+.field .cap{display:block;margin-bottom:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--s2);border-radius:10px;padding:2px;margin:10px 0 28px}
+.seg button{padding:9px 6px;border:none;border-radius:8px;background:transparent;color:var(--mute);font-size:14px;font-weight:500;transition:.2s}
+.seg button.on{background:#636366;color:var(--ink)}
+.rules{list-style:none;counter-reset:r;margin:10px 0 32px;border-top:1px solid var(--hair)}
+.rules li{counter-increment:r;display:grid;grid-template-columns:22px 1fr;padding:12px 0;border-bottom:1px solid var(--hair);font-size:14px;line-height:1.55;color:#d1d1d6;word-break:keep-all}
+.rules li::before{content:counter(r);color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+.hd{margin-bottom:22px}
+.hdrow{display:flex;justify-content:space-between;align-items:center}
+.rnd{font-size:13px;color:var(--mute);font-weight:500}
+.rnd b{color:var(--ink);font-weight:600}
+.tools{display:flex;gap:16px}
+.tbtn{background:none;border:none;font-size:13px;color:var(--mute)}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.seat{background:var(--s1);border:1px solid var(--hair);border-radius:14px;padding:12px 13px}
+.seat .who{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}
+.seat .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pips{display:flex;gap:4px;flex:none}
+.pips i{width:8px;height:8px;border-radius:50%;border:1px solid var(--dim)}
+.pips i.on{background:var(--pc);border-color:var(--pc)}
+.mini{display:flex;gap:4px;margin-top:10px}
+.mini i{flex:1;height:19px;border-radius:5px;background:var(--s2);font-style:normal;font-size:11px;display:grid;place-items:center;color:var(--ink)}
+.mini i:empty{background:transparent;box-shadow:inset 0 0 0 1px var(--hair)}
+.minic{display:flex;gap:4px;margin-top:8px;font-size:11px;color:var(--mute)}
+.minic i{font-style:normal;width:17px;height:17px;border-radius:50%;border:1px solid var(--hair2);display:grid;place-items:center}
+.minic i.x{border-color:transparent;color:var(--dim);text-decoration:line-through}
+
+/* ---------- pass / ready ---------- */
+.full{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;background:#000}
+.full .cap{margin-bottom:14px}
+.full h1{font-size:40px;font-weight:700;letter-spacing:-.035em;margin-bottom:14px;word-break:keep-all}
+.full p{color:var(--mute);font-size:16px;line-height:1.55;margin-bottom:48px;word-break:keep-all}
+.full .btn{max-width:300px}
+.full .bar{width:28px;height:3px;border-radius:2px;background:var(--pc);margin-bottom:22px}
+
+/* ---------- pick ---------- */
+.target{display:flex;justify-content:space-between;align-items:flex-end;margin:4px 0 18px}
+.target h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.target .sum{text-align:right}
+.target .sum b{display:block;font-size:44px;font-weight:600;line-height:1;letter-spacing:-.03em;margin-top:4px;min-width:60px}
+.hand{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 26px}
+.pcard{aspect-ratio:5/7;border-radius:9px;border:none;background:var(--ink);color:#000;font-size:24px;font-weight:600;
+  transition:transform .25s var(--ease),box-shadow .25s;box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
+.pcard.up{transform:translateY(-10px);box-shadow:0 0 0 2px var(--pc),0 14px 30px -10px var(--pc)}
+.pcard:disabled{background:transparent;color:var(--dim);box-shadow:inset 0 0 0 1px var(--hair)}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 24px}
+.chip{aspect-ratio:1;border-radius:50%;border:none;background:var(--s2);font-size:20px;font-weight:600;position:relative;transition:transform .2s var(--ease)}
+.chip::after{content:"";position:absolute;inset:4px;border-radius:50%;border:1px dashed rgba(255,255,255,.18)}
+.chip.on{background:var(--pc);color:#000;transform:scale(1.06)}
+.chip.on::after{border-color:rgba(0,0,0,.3)}
+.chip:disabled{background:transparent;color:var(--dim);text-decoration:line-through}
+.chip:disabled::after{border-color:var(--hair)}
+.intel{font-size:13px;color:var(--mute);line-height:1.7;border-top:1px solid var(--hair);padding-top:14px;margin-bottom:22px}
+.intel b{color:var(--ink);font-weight:500}
+
+/* ---------- countdown ---------- */
+.cd{position:fixed;inset:0;display:grid;place-items:center;background:#000;z-index:50}
+.cd div{font-size:120px;font-weight:200;letter-spacing:-.05em;animation:beat .85s var(--ease) both}
+@keyframes beat{0%{opacity:0;transform:scale(.92)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
+
+/* ---------- reveal ---------- */
+.table{display:flex;flex-direction:column;gap:14px}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;background:var(--s1);border:1px solid var(--hair);border-radius:16px;padding:14px 16px;transition:.6s}
+.row .nm{font-size:14px;font-weight:600;margin-bottom:10px}
+.row .cards{display:flex;gap:7px}
+.row .stat{text-align:right}
+.row .stat .g{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.row .stat .d{font-size:13px;color:var(--mute);margin-top:4px}
+.row.win{border-color:var(--pc);box-shadow:0 0 0 1px var(--pc),0 20px 50px -24px var(--pc)}
+.row.lose{opacity:.45}
+.fc{width:48px;height:68px;perspective:700px}
+.fc.round{width:46px;height:46px}
+.fc .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:turn .8s var(--ease) var(--d) both}
+.fc.down .in{animation:none;transform:rotateY(180deg)}
+@keyframes turn{from{transform:rotateY(180deg)}to{transform:rotateY(0)}}
+.fc .f,.fc .k{position:absolute;inset:0;border-radius:8px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+.fc .f{background:var(--ink);color:#000;font-size:24px;font-weight:600}
+.fc .k{transform:rotateY(180deg);background:var(--s2);border:1px solid var(--hair2);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 5px)}
+.fc.round .f,.fc.round .k{border-radius:50%}
+.fc.round .f{background:var(--pc);font-size:20px}
+.pot{display:flex;flex-direction:column;align-items:center;padding:10px 0 6px}
+.pot .chiprow{display:flex;align-items:center;gap:12px}
+.pot .plus{color:var(--dim);font-size:20px;font-weight:300}
+.pot .t{font-size:72px;font-weight:600;letter-spacing:-.05em;line-height:1;margin-top:10px}
+.verdict{text-align:center;margin:26px 0 6px}
+.verdict h1{font-size:30px;font-weight:700;letter-spacing:-.03em}
+.verdict p{font-size:14px;color:var(--mute);margin-top:8px;line-height:1.6;word-break:keep-all}
+
+.hcol{background:var(--s1);border:1px solid var(--hair);border-radius:16px;padding:14px 16px 4px;margin-bottom:12px}
+.hcol .nm{font-size:14px;font-weight:600}
+
+/* ---------- end ---------- */
+.final{text-align:center;margin:60px 0 34px}
+.final h1{font-size:44px;font-weight:700;letter-spacing:-.04em;margin:12px 0 8px;word-break:keep-all}
+.final .score{font-size:64px;font-weight:200;letter-spacing:-.04em;margin:10px 0}
+.final .score .s{color:var(--dim);margin:0 10px}
+.final p{color:var(--mute);font-size:14px}
+table.hist{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.hist th{color:var(--mute);font-weight:500;font-size:11px;text-align:center;padding:8px 2px;border-bottom:1px solid var(--hair)}
+.hist td{text-align:center;padding:11px 2px;border-bottom:1px solid var(--hair)}
+.hist td.w{font-weight:600}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ---------- sheet ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:flex-end;justify-content:center;z-index:80;animation:fade .25s both}
+.sheet{width:100%;max-width:480px;max-height:85vh;overflow:auto;background:var(--s1);border-radius:22px 22px 0 0;padding:22px 20px 30px}
+.sheet h3{font-size:17px;font-weight:600;margin-bottom:6px}
+
+/* ---------- online / audio additions ---------- */
+.toprow{display:flex;justify-content:flex-end;gap:16px;min-height:18px}
+.field.one{grid-template-columns:1fr}
+.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12px;margin:16px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--hair)}
+.joinrow{display:grid;grid-template-columns:1fr auto;gap:10px}
+.joinrow input{width:100%;padding:15px 14px;border-radius:12px;border:none;background:var(--s2);color:var(--ink);font-size:18px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;outline:none}
+.joinrow .btn{width:auto;padding:0 24px}
+.err{color:var(--a);font-size:13px;min-height:20px;margin:12px 0 18px;line-height:1.5}
+.code{font-size:60px;font-weight:600;letter-spacing:.2em;margin:4px 0 14px 0.2em}
+.full .links{display:flex;gap:10px;width:100%;max-width:300px}
+.full .links .btn{flex:1}
+.full .tiny{margin-top:22px;background:none;border:none;color:var(--mute);font-size:13px}
+.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.me{font-size:10px;color:var(--mute);font-weight:500;margin-left:5px}
+.toast{position:fixed;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:90;background:var(--s2);border:1px solid var(--hair2);color:var(--ink);font-size:13px;padding:9px 16px;border-radius:999px;white-space:nowrap;transition:opacity .3s;pointer-events:none}
+.toast:empty{opacity:0}
+.ver{font-size:12px;color:var(--mute);margin-top:12px}
+.ver.ok{color:#30d158}
+.ver.bad{color:var(--a)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<script src="firebase-config.js"></script>
+<script>
+(() => {
+'use strict';
+const app = document.getElementById('app');
+const toastEl = document.getElementById('toast');
+const ONES = [0,1,2,3,4,5,6,7,8,9,10];
+const HANDS = [0,1,2,3,4,5];
+const WIN = 3, MAX_ROUNDS = 5, TOTAL = 55;
+let S = null;      // current game state
+let NET = null;    // online session
+let FB = null;     // firebase adapter
+
+const DEF_SETUP = { mode:'offline', names:['', ''], hand:'screen', myName:'' };
+let setup = (() => { try { return Object.assign({}, DEF_SETUP, JSON.parse(localStorage.getItem('near:setup') || '{}')); } catch(e){ return Object.assign({}, DEF_SETUP); } })();
+const saveSetup = () => { try { localStorage.setItem('near:setup', JSON.stringify(setup)); } catch(e){} };
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nm = p => esc(S.names[p]);
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} };
+const later = (ms, fn) => setTimeout(fn, ms);
+let toastTimer = null;
+function toast(msg, ms){
+  toastEl.textContent = msg || '';
+  clearTimeout(toastTimer);
+  if (msg && ms) toastTimer = later(ms, () => { toastEl.textContent = ''; });
+}
+
+/* =====================================================================
+   AUDIO — looping reverb BGM that tightens, chops and distorts with tension
+   ===================================================================== */
+const AU = (() => {
+  let ctx = null, n = null, bgmBuf = null, shotBuf = null, srcStart = 0, loop = { s:0, e:0 };
+  let fb = null, tension = 0.05, boost = 0, initP = null;
+  let muted = (() => { try { return localStorage.getItem('near:muted') === '1'; } catch(e){ return false; } })();
+  const curves = {};
+  const curve = k => {
+    k = Math.round(k);
+    if (curves[k]) return curves[k];
+    const N = 2048, c = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const x = i / (N-1) * 2 - 1; c[i] = k === 0 ? x : (1 + k) * x / (1 + k * Math.abs(x)); }
+    return curves[k] = c;
+  };
+  function impulse(sec, decay){
+    const len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random()*2 - 1) * Math.pow(1 - i/len, decay); }
+    return b;
+  }
+  function build(){
+    const g = () => ctx.createGain();
+    const x = {};
+    x.master = g(); x.master.gain.value = 0; x.master.connect(ctx.destination);
+    x.duck = g(); x.input = g();
+    x.shaper = ctx.createWaveShaper(); x.shaper.oversample = '2x'; x.shaper.curve = curve(0);
+    x.lp = ctx.createBiquadFilter(); x.lp.type = 'lowpass'; x.lp.frequency.value = 900; x.lp.Q.value = 0.6;
+    x.chop = g();
+    x.lfo = ctx.createOscillator(); x.lfo.type = 'square'; x.lfo.frequency.value = 5;
+    x.lfoAmt = g(); x.lfoAmt.gain.value = 0; x.lfo.connect(x.lfoAmt); x.lfoAmt.connect(x.chop.gain); x.lfo.start();
+    x.dry = g(); x.send = g(); x.wet = g();
+    x.verb = ctx.createConvolver(); x.verb.buffer = impulse(5, 2.4);
+    x.duck.connect(x.input); x.input.connect(x.shaper); x.shaper.connect(x.lp); x.lp.connect(x.chop);
+    x.chop.connect(x.dry); x.dry.connect(x.master);
+    x.chop.connect(x.send); x.send.connect(x.verb); x.verb.connect(x.wet); x.wet.connect(x.master);
+    x.shot = g(); x.shot.connect(x.master);
+    x.shotSend = g(); x.shotSend.gain.value = 0.55; x.shot.connect(x.shotSend); x.shotSend.connect(x.verb);
+    return x;
+  }
+  async function load(url){
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(url);
+    const ab = await r.arrayBuffer();
+    return await new Promise((res, rej) => { const p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+  }
+  function findLoop(buf){ // skip mp3 encoder padding so the loop stays seamless
+    const d = buf.getChannelData(0), sr = buf.sampleRate, lim = sr * 0.15, th = 1e-5;
+    let s = 0, e = d.length - 1;
+    while (s < lim && Math.abs(d[s]) < th) s++;
+    while (d.length - e < lim && Math.abs(d[e]) < th) e--;
+    return { s: s / sr, e: (e + 1) / sr };
+  }
+  function playhead(){
+    const L = loop.e - loop.s, t = ctx.currentTime - srcStart;
+    return t < loop.e ? t : loop.s + ((t - loop.s) % L);
+  }
+  function startBgm(){
+    const src = ctx.createBufferSource();
+    src.buffer = bgmBuf; src.loop = true; src.loopStart = loop.s; src.loopEnd = loop.e;
+    src.connect(n.duck);
+    srcStart = ctx.currentTime - loop.s;
+    src.start(0, loop.s);
+  }
+  function useFallback(){ // file:// or no Web Audio: plain looping playback, volume follows tension
+    try {
+      const bgm = new Audio('audio/bgm.mp3'); bgm.loop = true;
+      const shot = new Audio('audio/gunshot.mp3');
+      fb = { bgm, shot };
+      apply(true);
+      bgm.play().catch(() => {});
+    } catch(e){ fb = null; }
+  }
+  function apply(instant){
+    const t = Math.min(1, Math.max(0, tension + boost));
+    if (fb) { fb.bgm.volume = muted ? 0 : Math.min(1, 0.22 + 0.55 * t); return; }
+    if (!ctx || !n) return;
+    const now = ctx.currentTime, T = instant ? 0.02 : 1.4;
+    const ramp = (p, v) => { p.cancelScheduledValues(now); p.setValueAtTime(p.value, now); p.linearRampToValueAtTime(v, now + T); };
+    ramp(n.master.gain, muted ? 0 : 0.34 + 0.5 * t);
+    n.lp.frequency.cancelScheduledValues(now); n.lp.frequency.setValueAtTime(Math.max(40, n.lp.frequency.value), now);
+    n.lp.frequency.exponentialRampToValueAtTime(900 * Math.pow(20000 / 900, t), now + T);
+    ramp(n.dry.gain, 0.25 + 0.7 * t);          // calm = drowned in reverb
+    ramp(n.wet.gain, 0.95 - 0.5 * t);
+    const k = t < 0.42 ? 0 : (t - 0.42) / 0.58 * 34; // distortion amount
+    n.shaper.curve = curve(k);
+    ramp(n.input.gain, 1 / (1 + k * 0.05));
+    const depth = t < 0.52 ? 0 : Math.min(0.9, (t - 0.52) / 0.48 * 0.9); // rhythmic chopping
+    ramp(n.chop.gain, 1 - depth / 2);
+    ramp(n.lfoAmt.gain, depth / 2);
+    n.lfo.frequency.setTargetAtTime(3.5 + 8.5 * t, now, 0.6);
+  }
+  function init(){
+    if (initP) { if (ctx && ctx.state === 'suspended') ctx.resume(); return initP; }
+    initP = (async () => {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC || location.protocol === 'file:') return useFallback();
+      try { ctx = new AC(); n = build(); } catch(e){ ctx = null; return useFallback(); }
+      try {
+        const r = await Promise.all([load('audio/bgm.mp3'), load('audio/gunshot.mp3')]);
+        bgmBuf = r[0]; shotBuf = r[1];
+      } catch(e){ try { ctx.close(); } catch(_){} ctx = null; n = null; return useFallback(); }
+      loop = findLoop(bgmBuf);
+      startBgm();
+      apply(false);
+    })();
+    return initP;
+  }
+  return {
+    init,
+    mood(t, b){ tension = t; boost = b || 0; apply(false); },
+    shot(o){
+      o = o || {};
+      if (muted) return;
+      if (fb) { try { const s = fb.shot.cloneNode(); s.volume = Math.min(1, o.gain == null ? 0.9 : o.gain); setTimeout(() => s.play().catch(()=>{}), (o.delay || 0) * 1000); } catch(e){} return; }
+      if (!ctx || !shotBuf) return;
+      const s = ctx.createBufferSource(), g = ctx.createGain();
+      s.buffer = shotBuf; s.playbackRate.value = o.rate || 1; g.gain.value = o.gain == null ? 1 : o.gain;
+      s.connect(g); g.connect(n.shot);
+      s.start(ctx.currentTime + (o.delay || 0));
+    },
+    stutter(slice, reps){
+      if (!ctx || !bgmBuf || muted) return;
+      slice = slice || 0.12; reps = reps || 6;
+      let pos = playhead(); if (pos + slice > loop.e) pos = loop.e - slice;
+      const now = ctx.currentTime, dur = slice * reps;
+      n.duck.gain.cancelScheduledValues(now); n.duck.gain.setValueAtTime(0, now); n.duck.gain.setValueAtTime(1, now + dur);
+      const s = ctx.createBufferSource();
+      s.buffer = bgmBuf; s.loop = true; s.loopStart = pos; s.loopEnd = pos + slice;
+      s.connect(n.input); s.start(now, pos); s.stop(now + dur);
+    },
+    toggle(){
+      muted = !muted;
+      try { localStorage.setItem('near:muted', muted ? '1' : '0'); } catch(e){}
+      if (!initP) init();
+      apply(true);
+      return muted;
+    },
+    get muted(){ return muted; },
+    debug(){ return { state: ctx && ctx.state, fallback: !!fb, loaded: !!bgmBuf, loop, dur: bgmBuf && bgmBuf.duration, playhead: ctx && bgmBuf ? playhead() : null }; }
+  };
+})();
+document.addEventListener('pointerdown', () => AU.init(), { once:true });
+window.NEAR_AUDIO = AU;
+
+function tensionFor(){
+  if (!S) return 0.05;
+  const r = Math.min(S.round, MAX_ROUNDS);
+  let t = 0.06 + 0.11 * (r - 1);
+  if (Math.max(S.wins[0], S.wins[1]) === WIN - 1) t += 0.16;
+  if (S.wins[0] === WIN - 1 && S.wins[1] === WIN - 1) t += 0.14;
+  return t;
+}
+function mood(phase){
+  if (phase === 'setup') return AU.mood(0.05, 0);
+  if (phase === 'end') return AU.mood(0.12, 0);
+  AU.mood(tensionFor(), phase === 'showdown' ? 0.22 : 0);
+}
+
+/* =====================================================================
+   RULES / CORE
+   ===================================================================== */
+function rulesHTML(){
+  return `<ol class="rules">
+    <li>각자 0–10, 11장 중 서로 다른 두 장을 몰래 고릅니다. 그 합이 목표입니다.</li>
+    <li>동시에 0–5 중 하나를 냅니다. 두 사람이 낸 수의 합에 2를 곱한 값이 공용 합입니다. (0–20)</li>
+    <li>공용 합이 자기 목표에 더 가까운 사람이 이깁니다. 거리가 같으면 무승부입니다.</li>
+    <li>한 번 쓴 카드는 승패와 관계없이 다시 쓸 수 없습니다. 다섯 판을 다 해도 한 장은 남습니다.</li>
+    <li>진 사람은 그 판에 낸 0–5를 다시 낼 수 없습니다.</li>
+    <li>판이 끝나면 각자의 목표(합)만 공개됩니다. 어떤 두 수를 골랐는지는 게임이 끝난 뒤 공개됩니다.</li>
+    <li>5판 3선승. 다섯 판이 끝나면 승수가 많은 쪽이 이기고, 같으면 무승부입니다.</li>
+  </ol>`;
+}
+
+function newState(names, hand, mode){
+  return { names, hand, mode, round:1, used:[new Set(), new Set()], banned:[new Set(), new Set()],
+           wins:[0,0], draws:0, history:[], cur:null, over:null, me:null, endFx:false };
+}
+const avail0 = p => HANDS.filter(n => !S.banned[p].has(n));
+const sumsLeft = p => TOTAL - S.history.reduce((t, h) => t + h.sums[p], 0);
+
+function checkEnd(G){
+  G = G || S;
+  for (const p of [0,1]) if (G.wins[p] >= WIN) return { w:p, why:`${WIN}선승` };
+  if (G.history.length >= MAX_ROUNDS) {
+    if (G.wins[0] !== G.wins[1]) return { w: G.wins[0] > G.wins[1] ? 0 : 1, why:'다섯 판 종료 · 승수 우위' };
+    return { w:-1, why:'다섯 판 종료 · 승수 동률' };
+  }
+  return null;
+}
+
+// secret: [pair|null, pair|null] (null = unknown to this device), sums/hand: [n,n]
+function applyRound(G, secret, sums, hand){
+  const T = (hand[0] + hand[1]) * 2;
+  const d = [Math.abs(T - sums[0]), Math.abs(T - sums[1])];
+  const w = d[0] < d[1] ? 0 : d[1] < d[0] ? 1 : -1;
+  [0,1].forEach(p => { if (secret[p]) secret[p].forEach(n => G.used[p].add(n)); });
+  let ban = null;
+  if (w !== -1) { const l = 1 - w; G.banned[l].add(hand[l]); ban = { p:l, n:hand[l] }; G.wins[w]++; }
+  else G.draws++;
+  const rec = { round:G.history.length + 1, secret:secret.map(a => a ? [...a] : null), sums:[...sums], hand:[...hand], T, d, w, ban };
+  G.history.push(rec);
+  return rec;
+}
+
+/* =====================================================================
+   HEADER / SHEETS
+   ===================================================================== */
+const pips = p => `<span class="pips p${p}">${[0,1,2].map(i => `<i class="${i < S.wins[p] ? 'on' : ''}"></i>`).join('')}</span>`;
+function seat(p){
+  return `<div class="seat p${p}">
+    <div class="who"><span><i class="dot"></i>${nm(p)}${S.me === p ? '<span class="me">나</span>' : ''}</span>${pips(p)}</div>
+    <div class="mini num">${[0,1,2,3,4].map(i => `<i>${S.history[i] ? S.history[i].sums[p] : ''}</i>`).join('')}</div>
+    <div class="minic num">${HANDS.map(n => `<i class="${S.banned[p].has(n)?'x':''}">${n}</i>`).join('')}</div>
+  </div>`;
+}
+function header(roundShown){
+  const r = roundShown || Math.min(S.round, MAX_ROUNDS);
+  return `<div class="hd">
+    <div class="hdrow">
+      <div class="rnd">Round <b class="num">${r}</b> / ${MAX_ROUNDS}</div>
+      <div class="tools"><button class="tbtn" data-act="hist">기록</button><button class="tbtn" data-act="rules">규칙</button><button class="tbtn" data-act="snd">${AU.muted ? '소리 끔' : '소리'}</button><button class="tbtn" data-act="quit">종료</button></div>
+    </div>
+    <div class="board">${seat(0)}${seat(1)}</div>
+  </div>`;
+}
+function bindHeader(){
+  app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const a = b.dataset.act;
+    if (a === 'rules') sheet('규칙', rulesHTML());
+    if (a === 'snd') { AU.toggle(); b.textContent = AU.muted ? '소리 끔' : '소리'; }
+    if (a === 'hist') sheet('기록', histHTML(S.mode === 'online' ? 'known' : 'sums') || '<p style="color:var(--mute);font-size:14px;margin:14px 0">아직 기록이 없습니다.</p>');
+    if (a === 'quit') sheet('게임을 종료할까요?', `<p style="color:var(--mute);font-size:14px;margin:8px 0 22px">${S.mode === 'online' ? '방에서 나갑니다. 같은 코드로 다시 들어올 수 있습니다.' : '진행 중인 기록은 사라집니다.'}</p>
+      <div class="btnrow"><button class="btn sec" data-close>계속</button><button class="btn" id="doquit">종료</button></div>`,
+      el => el.querySelector('#doquit').onclick = () => { closeSheet(); quitGame(); }, true);
+  });
+}
+function quitGame(){ if (S && S.mode === 'online') leaveOnline(); else { S = null; renderSetup(); } }
+
+function sheet(title, body, after, noClose){
+  closeSheet();
+  const m = document.createElement('div');
+  m.className = 'modal'; m.id = 'modal';
+  m.innerHTML = `<div class="sheet"><h3>${title}</h3>${body}${noClose ? '' : '<button class="btn sec" data-close style="margin-top:18px">닫기</button>'}</div>`;
+  m.onclick = e => { if (e.target === m || e.target.hasAttribute('data-close')) closeSheet(); };
+  document.body.appendChild(m);
+  if (after) after(m);
+}
+function closeSheet(){ const m = document.getElementById('modal'); if (m) m.remove(); }
+
+// mode: 'sums' = targets only, 'known' = show any pair this device knows
+function histHTML(mode){
+  if (!S || !S.history.length) return '';
+  const cell = (h, p) => (mode === 'known' && h.secret[p]) ? `<td>${h.secret[p].join('+')} <span style="color:var(--mute)">${h.sums[p]}</span></td>` : `<td>${h.sums[p]}</td>`;
+  const rows = S.history.map(h => {
+    const w = h.w === -1 ? '<td style="color:var(--mute)">무</td>' : `<td class="w p${h.w}" style="color:var(--pc)">${esc(S.names[h.w].slice(0,4))}</td>`;
+    return `<tr class="num"><td style="color:var(--mute)">${h.round}</td>${cell(h,0)}${cell(h,1)}
+      <td>(${h.hand[0]}+${h.hand[1]})×2 <b>${h.T}</b></td><td>${h.d[0]}:${h.d[1]}</td>${w}</tr>`;
+  }).join('');
+  return `<table class="hist"><tr><th></th><th>${esc(S.names[0].slice(0,5))}</th><th>${esc(S.names[1].slice(0,5))}</th><th>공용</th><th>거리</th><th>승</th></tr>${rows}</table>`;
+}
+
+/* =====================================================================
+   SETUP
+   ===================================================================== */
+function renderSetup(msg){
+  closeSheet(); toast('');
+  window.onbeforeunload = null;
+  mood('setup');
+  const on = setup.mode === 'online';
+  const qroom = (new URLSearchParams(location.search).get('room') || '').toUpperCase().slice(0,4);
+  app.innerHTML = `<div class="fade">
+    <div class="toprow"><button class="tbtn" id="snd">${AU.muted ? '소리 끔' : '소리'}</button></div>
+    <div class="brand" style="margin-top:36px">NEAR</div>
+    <div class="tag">가까운 합 · 1:1 · 5판 3선승</div>
+    <div class="cap">모드</div>
+    <div class="seg" data-k="mode">
+      <button data-v="offline" class="${!on?'on':''}">오프라인</button>
+      <button data-v="online" class="${on?'on':''}">온라인</button>
+    </div>
+    ${on ? `
+    <div class="field one"><label><span class="cap">내 이름</span><input id="me" maxlength="10" placeholder="이름" value="${esc(setup.myName)}"></label></div>
+    <button class="btn" id="create">방 만들기</button>
+    <div class="or">또는</div>
+    <div class="joinrow"><input id="code" maxlength="4" placeholder="코드" value="${esc(qroom)}" autocomplete="off" autocapitalize="characters"><button class="btn sec" id="join">참가</button></div>
+    <div class="err" id="err">${msg ? esc(msg) : ''}</div>
+    ` : `
+    <div class="field">
+      <label><span class="cap"><i class="dot p0"></i>Player A</span><input id="n0" maxlength="10" placeholder="이름" value="${esc(setup.names[0])}"></label>
+      <label><span class="cap"><i class="dot p1"></i>Player B</span><input id="n1" maxlength="10" placeholder="이름" value="${esc(setup.names[1])}"></label>
+    </div>
+    <div class="cap">0–5 내는 방식</div>
+    <div class="seg" data-k="hand">
+      <button data-v="screen" class="${setup.hand==='screen'?'on':''}">화면에서</button>
+      <button data-v="real" class="${setup.hand==='real'?'on':''}">손가락으로</button>
+    </div>
+    <button class="btn" id="start" style="margin-bottom:32px">시작</button>
+    `}
+    <div class="cap">규칙</div>
+    ${rulesHTML()}
+  </div>`;
+  const sync = () => {
+    const q = s => app.querySelector(s);
+    if (q('#n0')) setup.names = [q('#n0').value, q('#n1').value];
+    if (q('#me')) setup.myName = q('#me').value;
+    saveSetup();
+  };
+  app.querySelector('#snd').onclick = e => { AU.toggle(); e.target.textContent = AU.muted ? '소리 끔' : '소리'; };
+  app.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    sync(); setup[seg.dataset.k] = b.dataset.v; saveSetup(); renderSetup();
+  }));
+  if (!on) {
+    app.querySelector('#start').onclick = () => { sync(); AU.init(); newOfflineGame(); };
+    return;
+  }
+  const err = m => { const e = app.querySelector('#err'); if (e) e.textContent = m || ''; };
+  const busy = v => app.querySelectorAll('#create,#join').forEach(b => b.disabled = v);
+  const myName = () => (setup.myName || '').trim() || 'Player';
+  app.querySelector('#create').onclick = async () => {
+    sync(); AU.init(); busy(true); err('연결 중…');
+    try { await onlineCreate(myName()); } catch(e){ busy(false); err(fbErr(e)); }
+  };
+  app.querySelector('#join').onclick = async () => {
+    sync(); AU.init();
+    const code = app.querySelector('#code').value.trim().toUpperCase();
+    if (code.length !== 4) return err('4자리 코드를 입력해 주세요.');
+    busy(true); err('연결 중…');
+    try { await onlineJoin(code, myName()); } catch(e){ busy(false); err(fbErr(e)); }
+  };
+}
+
+/* =====================================================================
+   SHARED SCREENS
+   ===================================================================== */
+function renderPick(p, onDone){
+  const o = 1 - p;
+  const needHand = S.hand === 'screen';
+  let two = [], hand = null;
+  mood('pick');
+  const draw = () => {
+    const sum = two.length === 2 ? two[0] + two[1] : '—';
+    const oppHands = avail0(o);
+    const left = 11 - 2 * S.history.length;
+    app.innerHTML = `<div class="p${p}">
+      ${header()}
+      <div class="target">
+        <h2><i class="dot"></i>${nm(p)}</h2>
+        <div class="sum"><span class="cap">목표</span><b class="num">${sum}</b></div>
+      </div>
+      <div class="cap">0–10 · 두 장</div>
+      <div class="hand num">${ONES.map(n => `<button class="pcard ${two.includes(n)?'up':''}" data-one="${n}" ${S.used[p].has(n)?'disabled':''}>${n}</button>`).join('')}</div>
+      ${needHand ? `<div class="cap">0–5 · 한 개</div>
+      <div class="chips num">${HANDS.map(n => `<button class="chip ${hand===n?'on':''}" data-hand="${n}" ${S.banned[p].has(n)?'disabled':''}>${n}</button>`).join('')}</div>` : ''}
+      <div class="intel num">
+        상대의 지난 목표 <b>${S.history.length ? S.history.map(h => h.sums[o]).join(' ') : '없음'}</b><br>
+        상대 남은 ${left}장의 합 <b>${sumsLeft(o)}</b><br>
+        상대가 낼 수 있는 수 <b>${oppHands.join(' ')}</b>
+        ${needHand && hand !== null ? `<br>내가 ${hand}을 내면 공용 합 <b>${(hand + Math.min(...oppHands)) * 2}–${(hand + Math.max(...oppHands)) * 2}</b>` : ''}
+      </div>
+      <button class="btn" id="ok" ${two.length === 2 && (!needHand || hand !== null) ? '' : 'disabled'}>확정</button>
+    </div>`;
+    bindHeader();
+    app.querySelectorAll('[data-one]').forEach(b => b.onclick = () => {
+      const n = +b.dataset.one;
+      if (two.includes(n)) two = two.filter(x => x !== n);
+      else if (two.length < 2) two.push(n);
+      else { two.shift(); two.push(n); }
+      buzz(6); draw();
+    });
+    app.querySelectorAll('[data-hand]').forEach(b => b.onclick = () => { hand = +b.dataset.hand; buzz(6); draw(); });
+    app.querySelector('#ok').onclick = () => {
+      app.querySelector('#ok').disabled = true;
+      buzz(15);
+      onDone([...two].sort((a,b) => a-b), hand);
+    };
+  };
+  draw();
+}
+
+function countdown(words, done){
+  mood('showdown');
+  const cd = document.createElement('div');
+  cd.className = 'cd'; document.body.appendChild(cd);
+  let i = 0;
+  const step = () => {
+    if (i >= words.length) { cd.remove(); done(); return; }
+    cd.innerHTML = `<div>${words[i]}</div>`;
+    buzz(i === words.length - 1 ? 40 : 10);
+    i++; later(850, step);
+  };
+  step();
+}
+
+function renderResult(r, onNext){
+  mood('showdown');
+  AU.shot({ rate:1, gain:0.9 });
+  const tChip = 300, tTotal = 1250, tStat = [2100, 2800], tVerdict = 3600;
+  const fc = (v, d, round) => `<div class="fc ${round ? 'round' : ''}" style="--d:${d}ms"><div class="in"><div class="f num">${v}</div><div class="k"></div></div></div>`;
+  const down = '<div class="fc down"><div class="in"><div class="f"></div><div class="k"></div></div></div>';
+  const row = p => `<div class="row p${p}" id="row${p}">
+    <div><div class="nm"><i class="dot"></i>${nm(p)}</div><div class="cards">${down}${down}</div></div>
+    <div class="stat later" style="--d:${tStat[p]}ms">
+      <div class="cap">목표</div><div class="g num">${r.sums[p]}</div>
+      <div class="d num later" style="--d:${tVerdict - 300}ms">거리 ${r.d[p]}</div>
+    </div></div>`;
+  const end = checkEnd();
+  let vTitle, vSub;
+  if (r.w === -1) { vTitle = `<h1 style="color:var(--mute)">무승부</h1>`; vSub = '아무도 0–5를 잃지 않습니다.'; }
+  else { vTitle = `<h1 class="p${r.w}" style="color:var(--pc)">${nm(r.w)}</h1>`; vSub = `${nm(r.ban.p)}님은 이제 <b style="color:var(--ink)">${r.ban.n}</b>을 낼 수 없습니다.`; }
+
+  app.innerHTML = `<div>
+    ${header(r.round)}
+    <div class="table">
+      ${row(0)}
+      <div class="pot">
+        <div class="chiprow"><span class="p0">${fc(r.hand[0], tChip, true)}</span><span class="plus later" style="--d:${tChip}ms">+</span><span class="p1">${fc(r.hand[1], tChip, true)}</span><span class="plus later" style="--d:${tChip}ms">× 2</span></div>
+        <div class="t num later" style="--d:${tTotal}ms">${r.T}</div>
+        <div class="cap later" style="--d:${tTotal}ms;margin-top:4px">공용 합</div>
+      </div>
+      ${row(1)}
+    </div>
+    <div class="verdict later" style="--d:${tVerdict}ms">${vTitle}<p>${vSub}</p></div>
+    <div class="fill"></div>
+    <button class="btn later" id="next" style="--d:${tVerdict + 500}ms;margin-top:22px">${end ? '최종 결과' : '다음 라운드'}</button>
+  </div>`;
+  bindHeader();
+  later(tChip + 200, () => buzz(12));
+  later(tTotal, () => buzz(25));
+  later(tVerdict, () => {
+    buzz(r.w === -1 ? 20 : [30, 60, 30]);
+    if (r.w !== -1) {
+      const W = document.getElementById('row' + r.w), L = document.getElementById('row' + (1 - r.w));
+      W && W.classList.add('win'); L && L.classList.add('lose');
+      AU.stutter(0.11, 6);
+      if (S.wins[r.w] >= WIN - 1) AU.shot({ rate:0.82, gain:0.8 });   // match point or decisive
+    }
+  });
+  app.querySelector('#next').onclick = () => { app.querySelector('#next').disabled = true; onNext(); };
+}
+
+function renderEnd(){
+  window.onbeforeunload = null;
+  mood('end');
+  const e = S.over, on = S.mode === 'online';
+  const fxKey = on ? 'g' + NET.game : 'x';
+  if (on ? NET.endFx !== fxKey : !S.endFx) { if (on) NET.endFx = fxKey; else S.endFx = true; AU.shot({ rate:0.7, gain:1 }); AU.shot({ rate:0.55, gain:0.7, delay:0.45 }); }
+  const me = S.me, op = on ? 1 - me : null;
+  const remain = p => S.history.every(h => h.secret[p]) ? ONES.filter(n => !S.history.some(h => h.secret[p].includes(n))).join(' ') : '?';
+  let ver = '', btns;
+  if (on) {
+    const G = NET.G || {}, au = G.audit || {}, rm = G.rematch || {};
+    if (NET.verify) ver = NET.verify.ok ? `<div class="ver ok">검증 완료 · 상대의 모든 카드가 처음 잠근 값과 일치합니다</div>` : `<div class="ver bad">검증 실패 · ${esc(NET.verify.why)}</div>`;
+    else if (S.cheat == null) ver = `<div class="ver pulse">${au['p'+op] ? '상대 카드 검증 중' : '상대 카드 공개 대기 중'}</div>`;
+    const oppOnline = !!(NET.room && NET.room.players && NET.room.players['p'+op] && NET.room.players['p'+op].online);
+    const label = rm['p'+me] ? '상대 대기 중' : (rm['p'+op] ? '다시 (상대 준비됨)' : '다시');
+    btns = `<div class="btnrow"><button class="btn sec" id="home">나가기</button><button class="btn" id="again" ${rm['p'+me] || !oppOnline ? 'disabled' : ''}>${label}</button></div>`;
+  } else {
+    btns = `<div class="btnrow"><button class="btn sec" id="home">설정</button><button class="btn" id="again">다시</button></div>`;
+  }
+  app.innerHTML = `<div class="fade ${e.w === -1 ? '' : 'p' + e.w}">
+    <div class="final">
+      <div class="cap">${esc(e.why)}</div>
+      <h1 style="color:${e.w === -1 ? 'var(--mute)' : 'var(--pc)'}">${e.w === -1 ? '무승부' : nm(e.w)}</h1>
+      <div class="score num"><span style="color:var(--a)">${S.wins[0]}</span><span class="s">:</span><span style="color:var(--b)">${S.wins[1]}</span></div>
+      <p>${nm(0)} · ${nm(1)}${S.draws ? ` · 무승부 ${S.draws}` : ''}</p>
+      <p class="num" style="margin-top:6px">남은 카드 <span style="color:var(--a)">${remain(0)}</span> · <span style="color:var(--b)">${remain(1)}</span></p>
+      ${ver}
+    </div>
+    <div class="cap">기록 · 전체 공개</div>
+    ${histHTML('known')}
+    <div style="height:32px"></div>
+    ${btns}
+  </div>`;
+  if (on) {
+    app.querySelector('#home').onclick = leaveOnline;
+    app.querySelector('#again').onclick = () => { app.querySelector('#again').disabled = true; FB.set(FB.ref(`${gpath()}/rematch/p${S.me}`), true).catch(e => toast(fbErr(e), 3000)); };
+  } else {
+    app.querySelector('#again').onclick = () => { AU.init(); newOfflineGame(); };
+    app.querySelector('#home').onclick = () => { S = null; renderSetup(); };
+  }
+}
+
+/* =====================================================================
+   OFFLINE (one device, pass and play)
+   ===================================================================== */
+function newOfflineGame(){
+  S = newState([setup.names[0].trim() || 'Player A', setup.names[1].trim() || 'Player B'], setup.hand, 'offline');
+  startOfflineRound();
+}
+function startOfflineRound(){
+  window.onbeforeunload = () => '진행 중인 게임이 있습니다.';
+  const end = checkEnd();
+  if (end) { S.over = end; return renderEnd(); }
+  S.cur = { secret:[null,null], hand:[null,null] };
+  renderPass(0);
+}
+function renderPass(p){
+  const o = 1 - p;
+  mood('pick');
+  app.innerHTML = `<div class="full p${p} fade">
+    <div class="bar"></div>
+    <div class="cap">Round ${S.round} / ${MAX_ROUNDS}</div>
+    <h1>${nm(p)}</h1>
+    <p>${nm(o)}님은 화면에서 눈을 떼 주세요.</p>
+    <button class="btn" id="go">확인</button>
+  </div>`;
+  app.querySelector('#go').onclick = () => renderPick(p, (pair, hand) => {
+    S.cur.secret[p] = pair;
+    if (S.hand === 'screen') S.cur.hand[p] = hand;
+    if (p === 0) renderPass(1); else renderReady();
+  });
+}
+function renderReady(){
+  const real = S.hand === 'real';
+  mood('pick');
+  app.innerHTML = `<div class="full fade" style="--pc:var(--ink)">
+    <div class="bar"></div>
+    <div class="cap">Round ${S.round} / ${MAX_ROUNDS}</div>
+    <h1>Showdown</h1>
+    <p>${real ? '한 손을 등 뒤로.<br>셋에 맞춰 동시에 손가락을 펴세요.' : '두 사람 모두 화면 앞으로.'}</p>
+    <button class="btn" id="go">${real ? '하나, 둘, 셋' : '공개'}</button>
+  </div>`;
+  app.querySelector('#go').onclick = () => countdown(real ? ['하나','둘','셋'] : ['3','2','1'], real ? renderHandInput : offlineResolve);
+}
+function renderHandInput(){
+  const sel = [null, null];
+  const draw = () => {
+    app.innerHTML = `<div>
+      ${header()}
+      <div class="target"><h2>펼친 손가락</h2></div>
+      ${[0,1].map(p => `<div class="hcol p${p}"><div class="nm"><i class="dot"></i>${nm(p)}</div>
+        <div class="chips num" style="margin:12px 0 10px">${HANDS.map(n => `<button class="chip ${sel[p]===n?'on':''}" data-p="${p}" data-n="${n}" ${S.banned[p].has(n)?'disabled':''}>${n}</button>`).join('')}</div></div>`).join('')}
+      <p style="color:var(--mute);font-size:13px;line-height:1.6;margin:6px 2px 20px">줄 그어진 수는 낼 수 없습니다. 금지된 수를 냈다면 그 사람만 다시 냅니다.</p>
+      <button class="btn" id="ok" ${sel[0] !== null && sel[1] !== null ? '' : 'disabled'}>공개</button>
+    </div>`;
+    bindHeader();
+    app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { sel[+b.dataset.p] = +b.dataset.n; buzz(6); draw(); });
+    app.querySelector('#ok').onclick = () => { S.cur.hand = [...sel]; offlineResolve(); };
+  };
+  draw();
+}
+function offlineResolve(){
+  const c = S.cur;
+  const rec = applyRound(S, c.secret, c.secret.map(x => x[0] + x[1]), c.hand);
+  renderResult(rec, () => { S.round++; startOfflineRound(); });
+}
+
+/* =====================================================================
+   ONLINE (Firebase Realtime Database)
+   Each move is locked with SHA-256(pair, hand, salt) before anyone reveals.
+   During the game only targets (sums) and hands are revealed; full pairs and
+   salts are published at the end and every client re-checks them.
+   ===================================================================== */
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const gpath = () => `rooms/${NET.code}/games/g${NET.game}`;
+
+async function loadFirebase(){
+  if (window.__NEAR_FAKE_FB__) return window.__NEAR_FAKE_FB__;
+  const cfg = window.NEAR_FIREBASE_CONFIG;
+  if (!cfg || !cfg.apiKey || !cfg.databaseURL) throw new Error('NOCONFIG');
+  const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const [A, U, D] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-database.js')]);
+  const fapp = A.initializeApp(cfg);
+  const cred = await U.signInAnonymously(U.getAuth(fapp));
+  const db = D.getDatabase(fapp);
+  return { uid: cred.user.uid, ref: p => D.ref(db, p), get: D.get, set: D.set, update: D.update,
+           onValue: D.onValue, onDisconnect: D.onDisconnect, serverTimestamp: D.serverTimestamp };
+}
+async function getFB(){ if (!FB) FB = await loadFirebase(); return FB; }
+function fbErr(e){
+  const m = e && (e.code || e.message) || '';
+  if (m === 'NOCONFIG') return 'Firebase 설정이 비어 있습니다. firebase-config.js를 채워 주세요.';
+  if (/PERMISSION_DENIED|permission/i.test(m)) return '권한이 없습니다. 데이터베이스 규칙과 익명 로그인 설정을 확인해 주세요.';
+  if (/admin-restricted|operation-not-allowed/i.test(m)) return 'Firebase에서 익명 로그인을 켜 주세요.';
+  return /[가-힣]/.test(m) ? m : '연결하지 못했습니다' + (m ? ` (${m})` : '');
+}
+async function sha256(str){
+  const subtle = (window.crypto && window.crypto.subtle) || window.__NEAR_SUBTLE__;
+  if (!subtle) throw new Error('보안 연결(https)에서만 온라인 대전을 할 수 있습니다.');
+  const buf = await subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function randHex(n){
+  const a = new Uint8Array(n);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(a); else for (let i = 0; i < n; i++) a[i] = Math.random()*256|0;
+  return Array.from(a).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function onlineCreate(name){
+  const fb = await getFB();
+  let code = null;
+  for (let i = 0; i < 8 && !code; i++) {
+    const c = Array.from({length:4}, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+    if (!(await fb.get(fb.ref('rooms/' + c))).exists()) code = c;
+  }
+  if (!code) throw new Error('방 코드를 만들지 못했습니다. 다시 시도해 주세요.');
+  await fb.set(fb.ref('rooms/' + code), { createdAt: fb.serverTimestamp(), game: 1, players: { p0: { uid: fb.uid, name, online: true } } });
+  attach(code, 0);
+}
+async function onlineJoin(code, name){
+  const fb = await getFB();
+  const snap = await fb.get(fb.ref('rooms/' + code));
+  if (!snap.exists()) throw new Error('없는 방입니다.');
+  const P = snap.val().players || {};
+  let me;
+  if (P.p0 && P.p0.uid === fb.uid) me = 0;
+  else if (P.p1 && P.p1.uid === fb.uid) me = 1;
+  else if (!P.p1) { me = 1; await fb.set(fb.ref(`rooms/${code}/players/p1`), { uid: fb.uid, name, online: true }); }
+  else throw new Error('방이 가득 찼습니다.');
+  attach(code, me);
+}
+function attach(code, me){
+  NET = { code, me, game:null, secrets:{}, shown:null, lock:false, phaseKey:null, revealing:{}, sending:null,
+          auditSent:false, verify:null, verifying:false, oppPairs:null, rematchSent:false, room:null, G:{}, unsub:null };
+  const onRef = FB.ref(`rooms/${code}/players/p${me}/online`);
+  try { FB.onDisconnect(onRef).set(false); } catch(e){}
+  FB.set(onRef, true).catch(() => {});
+  try { history.replaceState(null, '', '?room=' + code); } catch(e){}
+  window.onbeforeunload = null;
+  NET.unsub = FB.onValue(FB.ref('rooms/' + code), snap => { if (NET && NET.code === code) onRoom(snap.val()); },
+                         err => { toast(fbErr(err), 4000); });
+}
+function leaveOnline(){
+  if (NET) {
+    try { NET.unsub && NET.unsub(); } catch(e){}
+    try { FB.set(FB.ref(`rooms/${NET.code}/players/p${NET.me}/online`), false).catch(() => {}); } catch(e){}
+  }
+  NET = null; S = null;
+  try { history.replaceState(null, '', location.pathname); } catch(e){}
+  renderSetup();
+}
+const secretsKey = () => `near:${NET.code}:g${NET.game}:p${NET.me}`;
+const loadSecrets = () => { try { return JSON.parse(localStorage.getItem(secretsKey()) || '{}'); } catch(e){ return {}; } };
+const saveSecrets = () => { try { localStorage.setItem(secretsKey(), JSON.stringify(NET.secrets)); } catch(e){} };
+function phase(key, fn){ if (NET.phaseKey === key) return; NET.phaseKey = key; closeSheet(); fn(); }
+
+function validReveal(G, p, hand, sum){
+  return Number.isInteger(hand) && hand >= 0 && hand <= 5 && !G.banned[p].has(hand) &&
+         Number.isInteger(sum) && sum >= 1 && sum <= 19;
+}
+
+function onRoom(room){
+  if (!NET) return;
+  if (!room) { const n = NET; NET = null; S = null; try { n.unsub && n.unsub(); } catch(e){} return renderSetup('방이 사라졌습니다.'); }
+  NET.room = room;
+  const P = room.players || {}, me = NET.me, op = 1 - me;
+  const opOnline = !!(P['p'+op] && P['p'+op].online);
+  if (P.p1) toast(opOnline ? '' : '상대 연결이 끊겼습니다');
+  if (NET.lock) return;
+  if (!P.p1) return phase('lobby', renderLobby);
+
+  const g = room.game || 1;
+  if (NET.game !== g) {
+    Object.assign(NET, { game:g, shown:null, phaseKey:null, revealing:{}, sending:null, auditSent:false,
+                         verify:null, verifying:false, oppPairs:null, rematchSent:false });
+    NET.secrets = loadSecrets();
+  }
+  const G = (room.games && room.games['g' + g]) || {};
+  NET.G = G;
+  const rounds = G.rounds || {};
+
+  // rebuild the whole game from the database + this device's own secrets
+  const st = newState([(P.p0 && P.p0.name) || 'Player A', (P.p1 && P.p1.name) || 'Player B'], 'screen', 'online');
+  st.me = me; st.cheat = null;
+  for (let r = 1; r <= MAX_ROUNDS && !checkEnd(st); r++) {
+    const rv = rounds['r' + r] && rounds['r' + r].reveal;
+    if (!(rv && rv.p0 && rv.p1)) break;
+    const hand = [rv.p0.hand, rv.p1.hand], sums = [rv.p0.sum, rv.p1.sum];
+    for (const p of [0,1]) if (st.cheat == null && !validReveal(st, p, hand[p], sums[p])) st.cheat = p;
+    if (st.cheat != null) break;
+    const secret = [null, null];
+    if (NET.secrets['r' + r]) secret[me] = NET.secrets['r' + r].pair;
+    if (NET.oppPairs && NET.oppPairs['r' + r]) secret[op] = NET.oppPairs['r' + r];
+    applyRound(st, secret, sums, hand);
+  }
+  st.round = st.history.length + 1;
+  S = st;
+  if (NET.shown === null) NET.shown = st.history.length;   // don't replay rounds finished before (re)joining
+
+  // a finished round this device hasn't shown yet → showdown
+  if (st.history.length > NET.shown) {
+    const rec = st.history[NET.shown];
+    NET.lock = true; NET.phaseKey = null; closeSheet();
+    S.round = rec.round;
+    countdown(['3','2','1'], () => renderResult(rec, () => { NET.lock = false; NET.shown = rec.round; onRoom(NET.room); }));
+    return;
+  }
+
+  let end = null;
+  if (st.cheat != null) end = { w: 1 - st.cheat, why: `${st.names[st.cheat]} · 허용되지 않은 값을 공개함` };
+  else if (NET.verify && !NET.verify.ok) end = { w: me, why: `${st.names[op]} · 검증 실패` };
+  else end = checkEnd(st);
+  if (end) { S.over = end; return onlineEnd(opOnline); }
+
+  window.onbeforeunload = () => '진행 중인 게임이 있습니다.';
+  const R = st.history.length + 1;
+  const rd = rounds['r' + R] || {}, cm = rd.commit || {}, rv = rd.reveal || {};
+  const mineC = cm['p' + me], oppC = cm['p' + op], mineS = NET.secrets['r' + R];
+
+  if (!mineC && !mineS) return phase('pick' + g + '-' + R, () => renderPick(me, (pair, hand) => commitMove(R, pair, hand)));
+  if (!mineC && mineS) sendCommit(R);
+  if (mineC && oppC && !rv['p' + me]) writeReveal(R);
+  const what = !mineC ? 'send' : !oppC ? 'commit' : 'reveal';
+  phase(`wait${g}-${R}-${what}-${opOnline}`, () => renderWait(R, what, opOnline));
+}
+
+async function commitMove(R, pair, hand){
+  try {
+    const salt = randHex(16);
+    const hash = await sha256(`${pair[0]},${pair[1]},${hand},${salt}`);
+    NET.secrets['r' + R] = { pair, hand, salt, hash };
+    saveSecrets();
+    onRoom(NET.room);
+  } catch(e){ toast(fbErr(e), 4000); NET.phaseKey = null; onRoom(NET.room); }
+}
+function sendCommit(R){
+  const s = NET.secrets['r' + R];
+  if (!s || NET.sending === 'r' + R) return;
+  NET.sending = 'r' + R;
+  const net = NET;
+  FB.set(FB.ref(`${gpath()}/rounds/r${R}/commit/p${NET.me}`), s.hash)
+    .catch(e => toast(fbErr(e), 4000))
+    .then(() => { if (net.sending === 'r' + R) net.sending = null; });
+}
+function writeReveal(R){
+  if (NET.revealing[R]) return;
+  const s = NET.secrets['r' + R];
+  if (!s) { toast('이 기기에 이번 판 선택 기록이 없습니다', 4000); return; }
+  NET.revealing[R] = true;
+  const net = NET;
+  FB.set(FB.ref(`${gpath()}/rounds/r${R}/reveal/p${NET.me}`), { hand: s.hand, sum: s.pair[0] + s.pair[1] })
+    .catch(e => { net.revealing[R] = false; toast(fbErr(e), 4000); });
+}
+
+async function verifyAudit(audit, p){
+  const rounds = NET.G.rounds || {}, used = new Set(), pairs = {};
+  for (const h of S.history) {
+    const e = audit['r' + h.round], c = rounds['r' + h.round] && rounds['r' + h.round].commit && rounds['r' + h.round].commit['p' + p];
+    if (!e) return { ok:false, why:`${h.round}판 카드 미공개` };
+    const a = Math.min(e.a, e.b), b = Math.max(e.a, e.b);
+    if (![a, b].every(n => Number.isInteger(n) && n >= 0 && n <= 10) || a === b) return { ok:false, why:`${h.round}판 잘못된 카드` };
+    if (used.has(a) || used.has(b)) return { ok:false, why:`${h.round}판 카드 재사용` };
+    used.add(a); used.add(b);
+    if (a + b !== h.sums[p] || e.hand !== h.hand[p]) return { ok:false, why:`${h.round}판 공개값과 다름` };
+    if (await sha256(`${a},${b},${e.hand},${e.salt}`) !== c) return { ok:false, why:`${h.round}판 잠금값과 다름` };
+    pairs['r' + h.round] = [a, b];
+  }
+  return { ok:true, pairs };
+}
+
+function onlineEnd(opOnline){
+  window.onbeforeunload = null;
+  const me = NET.me, op = 1 - me, G = NET.G, au = G.audit || {}, rm = G.rematch || {};
+  if (!NET.auditSent && S.cheat == null) {
+    NET.auditSent = true;
+    const a = {};
+    for (const h of S.history) { const s = NET.secrets['r' + h.round]; if (s) a['r' + h.round] = { a:s.pair[0], b:s.pair[1], hand:s.hand, salt:s.salt }; }
+    const net = NET;
+    FB.set(FB.ref(`${gpath()}/audit/p${me}`), a).catch(e => { net.auditSent = false; toast(fbErr(e), 4000); });
+  }
+  if (au['p' + op] && !NET.verify && !NET.verifying) {
+    NET.verifying = true;
+    const net = NET;
+    verifyAudit(au['p' + op], op).then(res => {
+      if (NET !== net) return;
+      net.verify = res; net.verifying = false;
+      if (res.ok) net.oppPairs = res.pairs;
+      net.phaseKey = null; onRoom(net.room);
+    });
+  }
+  if (rm.p0 && rm.p1 && me === 0 && !NET.rematchSent) {
+    NET.rematchSent = true;
+    FB.update(FB.ref('rooms/' + NET.code), { game: NET.game + 1 }).catch(e => { NET.rematchSent = false; toast(fbErr(e), 4000); });
+  }
+  phase('end' + JSON.stringify([!!au['p' + op], NET.verify && NET.verify.ok, !!rm.p0, !!rm.p1, opOnline, S.history.length]), renderEnd);
+}
+
+function renderLobby(){
+  mood('setup');
+  const link = location.origin + location.pathname + '?room=' + NET.code;
+  app.innerHTML = `<div class="full fade p0">
+    <div class="bar"></div>
+    <div class="cap">방 코드</div>
+    <div class="code num">${NET.code}</div>
+    <p class="pulse">상대를 기다리는 중</p>
+    <div class="links"><button class="btn" id="copy">링크 복사</button></div>
+    <button class="tiny" id="leave">나가기</button>
+  </div>`;
+  app.querySelector('#copy').onclick = async e => {
+    try { await navigator.clipboard.writeText(link); e.target.textContent = '복사됨'; }
+    catch(_){ sheet('링크', `<p class="num" style="color:var(--mute);font-size:14px;margin:10px 0;word-break:break-all;-webkit-user-select:text;user-select:text">${esc(link)}</p>`); }
+  };
+  app.querySelector('#leave').onclick = leaveOnline;
+}
+
+function renderWait(R, what, opOnline){
+  mood('pick');
+  const op = 1 - NET.me;
+  const title = what === 'send' ? '전송 중' : what === 'commit' ? `${nm(op)} 고르는 중` : '공개 중';
+  app.innerHTML = `<div class="full fade p${NET.me}">
+    <div class="bar"></div>
+    <div class="cap">Round ${R} / ${MAX_ROUNDS} · ${S.wins[0]} : ${S.wins[1]}</div>
+    <h1 class="pulse">${title}</h1>
+    <p>${opOnline ? '내 선택은 잠겼습니다. 상대도 확정하면 바로 공개됩니다.' : '상대 연결이 끊겼습니다. 같은 코드로 돌아오면 이어집니다.'}</p>
+    <button class="tiny" id="leave">나가기</button>
+  </div>`;
+  app.querySelector('#leave').onclick = () => sheet('방에서 나갈까요?', `<p style="color:var(--mute);font-size:14px;margin:8px 0 22px">같은 코드로 다시 들어올 수 있습니다.</p>
+      <div class="btnrow"><button class="btn sec" data-close>계속</button><button class="btn" id="doquit">나가기</button></div>`,
+      el => el.querySelector('#doquit').onclick = () => { closeSheet(); leaveOnline(); }, true);
+}
+
+/* ===================================================================== */
+if (new URLSearchParams(location.search).get('room')) setup.mode = 'online';
+renderSetup();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && $code.matches(/^[A-Z2-9]{4}$/)",
+        "createdAt": { ".write": "auth != null && !data.exists()" },
+        "game": {
+          ".write": "auth != null && data.exists() && root.child('rooms/' + $code + '/players/p0/uid').val() === auth.uid && newData.val() === data.val() + 1",
+          ".validate": "newData.isNumber()"
+        },
+        "players": {
+          "$p": {
+            ".write": "auth != null && ($p === 'p0' || $p === 'p1') && (!data.exists() || data.child('uid').val() === auth.uid)",
+            ".validate": "newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 20"
+          }
+        },
+        "games": {
+          "$g": {
+            "rounds": {
+              "$r": {
+                "commit": {
+                  "$p": {
+                    ".write": "auth != null && !data.exists() && root.child('rooms/' + $code + '/players/' + $p + '/uid').val() === auth.uid",
+                    ".validate": "newData.isString() && newData.val().length === 64"
+                  }
+                },
+                "reveal": {
+                  "$p": {
+                    ".write": "auth != null && !data.exists() && root.child('rooms/' + $code + '/players/' + $p + '/uid').val() === auth.uid && data.parent().parent().child('commit/p0').exists() && data.parent().parent().child('commit/p1').exists()",
+                    ".validate": "newData.child('hand').isNumber() && newData.child('sum').isNumber()"
+                  }
+                }
+              }
+            },
+            "audit": {
+              "$p": { ".write": "auth != null && !data.exists() && root.child('rooms/' + $code + '/players/' + $p + '/uid').val() === auth.uid" }
+            },
+            "rematch": {
+              "$p": { ".write": "auth != null && root.child('rooms/' + $code + '/players/' + $p + '/uid').val() === auth.uid" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
